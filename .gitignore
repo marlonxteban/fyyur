@@ -1,3 +1,4 @@
 fyyur/
 .git/
 *.pyc
+.vscode/
