@@ -2,3 +2,6 @@ fyyur/
 .git/
 *.pyc
 .vscode/
+src/package-lock.json
+src/package.json
+src/node_modules
