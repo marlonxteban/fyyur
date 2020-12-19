@@ -31,15 +31,17 @@ migrate = Migrate(app, db)
 class Show(db.Model):
     __tablename__ = 'shows'
 
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True)
-    start_time = db.Column(db.DateTime, nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id', ondelete="CASCADE"), primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id', ondelete="CASCADE"), primary_key=True)
+    start_time = db.Column(db.DateTime, primary_key=True)
+    artist = db.relationship('Artist', backref=db.backref('shows', lazy =True))
+    venue = db.relationship('Venue', backref=db.backref('shows', lazy =True))
 
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
     genres = db.Column(db.String(120)) #revisar, es posible hacerla catalogo
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
@@ -51,7 +53,6 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String())
     image_link = db.Column(db.String())
-    shows = db.relationship('Show', secondary = 'shows', backref=db.backref('venues', lazy=True))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -59,7 +60,7 @@ class Artist(db.Model):
     __tablename__ = 'Artist'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
@@ -67,7 +68,6 @@ class Artist(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean)
-    shows = db.relationship('Show', secondary = 'shows', backref=db.backref('artists', lazy=True))
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 

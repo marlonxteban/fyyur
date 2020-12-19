@@ -2,6 +2,9 @@ fyyur/
 .git/
 *.pyc
 .vscode/
+src/__pycache__
 src/package-lock.json
 src/package.json
 src/node_modules
+src/migrations/__pycache__
+src/migrations/versions/__pycache__
