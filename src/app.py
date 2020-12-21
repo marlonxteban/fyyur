@@ -14,7 +14,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from helpers import venue_helper
+from helpers import helper
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -113,7 +113,7 @@ def venues():
       {
         "city": area.city,
         "state": area.state,
-        "venues": venue_helper.get_venues_by_areas(area, venues)
+        "venues": helper.get_venues_by_areas(area, venues)
       }
     )
 
@@ -133,7 +133,7 @@ def search_venues():
       {
         "id": venue.id,
         "name": venue.name,
-        "num_upcoming_shows": venue_helper.get_upcoming_shows_counter(venue.shows)
+        "num_upcoming_shows": helper.get_upcoming_shows_counter(venue.shows)
       }
     )
 
@@ -146,7 +146,7 @@ def show_venue(venue_id):
   data = {
     "id": venue.id,
     "name": venue.name,
-    "genres": venue_helper.get_genres_list(venue.genres),
+    "genres": helper.get_genres_list(venue.genres),
     "address": venue.address,
     "city": venue.city,
     "state": venue.state,
@@ -156,10 +156,10 @@ def show_venue(venue_id):
     "seeking_talent": venue.seeking_talent,
     "seeking_description": venue.seeking_description,
     "image_link": venue.image_link,
-    "past_shows": venue_helper.get_formatted_past_shows(venue.shows),
-    "upcoming_shows": venue_helper.get_formatted_upcoming_shows(venue.shows),
-    "past_shows_count": venue_helper.get_past_shows_counter(venue.shows),
-    "upcoming_shows_count": venue_helper.get_upcoming_shows_counter(venue.shows)
+    "past_shows": helper.get_formatted_past_shows(venue.shows),
+    "upcoming_shows": helper.get_formatted_upcoming_shows(venue.shows),
+    "past_shows_count": helper.get_past_shows_counter(venue.shows),
+    "upcoming_shows_count": helper.get_upcoming_shows_counter(venue.shows)
   }
   return render_template('pages/show_venue.html', venue=data)
 
@@ -173,9 +173,6 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
-
   try:
     new_venue = Venue(
     name = request.form['name'],
@@ -219,33 +216,28 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
-  # TODO: replace with real data returned from querying the database
-  data=[{
-    "id": 4,
-    "name": "Guns N Petals",
-  }, {
-    "id": 5,
-    "name": "Matt Quevedo",
-  }, {
-    "id": 6,
-    "name": "The Wild Sax Band",
-  }]
+  data = db.session.query(Artist.id, Artist.name).all()
   return render_template('pages/artists.html', artists=data)
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
-  # search for "band" should return "The Wild Sax Band".
-  response={
-    "count": 1,
-    "data": [{
-      "id": 4,
-      "name": "Guns N Petals",
-      "num_upcoming_shows": 0,
-    }]
+  search_term = request.form.get('search_term', '')
+  artists = Artist.query.filter(Artist.name.ilike('%'+search_term+'%')).all()
+  response = {
+    "count": len(artists),
+    "data": []
   }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+
+  for artist in artists:
+    response["data"].append(
+      {
+        "id": artist.id,
+        "name": artist.name,
+        "num_upcoming_shows": helper.get_upcoming_shows_counter(artist.shows)
+      }
+    )
+
+  return render_template('pages/search_artists.html', results=response, search_term=search_term)
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
