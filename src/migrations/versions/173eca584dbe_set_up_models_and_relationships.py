@@ -42,7 +42,7 @@ def upgrade():
     sa.Column('website', sa.String(length=120), nullable=True),
     sa.Column('seeking_talent', sa.Boolean(), nullable=True),
     sa.Column('seeking_description', sa.String(), nullable=True),
-    sa.Column('image_link', sa.String(), nullable=True),
+    sa.Column('image_link', sa.String(length=500), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('shows',
