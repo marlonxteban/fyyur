@@ -6,6 +6,7 @@ import json
 import dateutil.parser
 import babel
 import sys
+import magicattr
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
@@ -243,8 +244,6 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-  # shows the artist page with the given artist_id
-  # TODO: replace with real venue data from the venues table, using venue_id
   artist = Artist.query.filter_by(id=artist_id).first()
   data = {
     "id": artist.id,
@@ -270,54 +269,64 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   form = ArtistForm()
-  artist={
-    "id": 4,
-    "name": "Guns N Petals",
-    "genres": ["Rock n Roll"],
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "326-123-5000",
-    "website": "https://www.gunsnpetalsband.com",
-    "facebook_link": "https://www.facebook.com/GunsNPetals",
-    "seeking_venue": True,
-    "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-  }
-  # TODO: populate form with fields from artist with ID <artist_id>
+
+  raw_artist = Artist.query.filter_by(id=artist_id).first()
+  attribs = list(filter(lambda a: not a.startswith('_'), dir(raw_artist)))
+  for attrib in attribs:
+    if hasattr(form, attrib):
+      magicattr.set(form, attrib+'.data', getattr(raw_artist, attrib, ''))
+
+  artist = vars(raw_artist)
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  # TODO: take values from the form submitted, and update existing
-  # artist record with ID <artist_id> using the new attributes
-
-  return redirect(url_for('show_artist', artist_id=artist_id))
+  artist = Artist.query.filter_by(id=artist_id).first()
+  try:
+    artist.name = request.form.get("name", "")
+    artist.city = request.form.get("city", "")
+    artist.state = request.form.get("state", "")
+    artist.genres = request.form.get("genres", "")
+    artist.phone = request.form.get("phone", "")
+    artist.image_link = request.form.get("image_link", "")
+    artist.facebook_link = request.form.get("facebook_link", "")
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
+    return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
-  venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-  }
-  # TODO: populate form with values from venue with ID <venue_id>
+
+  raw_venue = Venue.query.filter_by(id=venue_id).first()
+  attribs = list(filter(lambda a: not a.startswith('_'), dir(raw_venue)))
+  for attrib in attribs:
+    if hasattr(form, attrib):
+      magicattr.set(form, attrib+'.data', getattr(raw_venue, attrib, ''))
+
+  venue = vars(raw_venue)
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  # TODO: take values from the form submitted, and update existing
-  # venue record with ID <venue_id> using the new attributes
-  return redirect(url_for('show_venue', venue_id=venue_id))
+  venue = Venue.query.filter_by(id=venue_id).first()
+  try:
+    venue.name = request.form.get("name", "")
+    venue.city = request.form.get("city", "")
+    venue.state = request.form.get("state", "")
+    venue.genres = request.form.get("genres", "")
+    venue.phone = request.form.get("phone", "")
+    venue.image_link = request.form.get("image_link", "")
+    venue.facebook_link = request.form.get("facebook_link", "")
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
+    return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
 #  ----------------------------------------------------------------
@@ -329,16 +338,30 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-  # called upon submitting the new artist listing form
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
-
-  # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-  return render_template('pages/home.html')
-
+  try:
+    new_artist = Artist(
+    name = request.form.get('name',''),
+    city = request.form.get('city',''),
+    state = request.form.get('state',''),
+    phone = request.form.get('phone',''),
+    genres = request.form.get('genres', ''),
+    facebook_link = request.form.get('facebook_link', ''),
+    website = request.form.get('website',''),
+    image_link = request.form.get('image_link', ''),
+    seeking_venue = request.form.get('seeking_venue', False),
+    seeking_description = request.form.get('seeking_description', '')
+    )
+    db.session.add(new_artist)
+    db.session.commit()
+    flash('Artist ' + request.form['name'] + ' was successfully listed!')
+  except:
+    flash('Artist ' + request.form['name'] + ' could not be listed!')
+    print(sys.exc_info())
+    flash(sys.exc_info())
+    db.session.rollback()
+  finally:
+    db.session.close()
+    return render_template('pages/home.html')
 
 #  Shows
 #  ----------------------------------------------------------------
