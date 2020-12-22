@@ -34,6 +34,12 @@ def get_past_shows_counter(shows):
 def get_genres_list(genders):
     return genders.split(",")
 
+def get_formatted_upcoming_shows_for_artist(shows):
+    return _format_show_for_artist(get_formatted_upcoming_shows(shows))
+
+def get_formatted_past_shows_for_artist(shows):
+    return _format_show_for_artist(get_past_shows(shows))
+
 def _format_show(shows):
     formatted_shows = []
     for show in shows:
@@ -42,7 +48,20 @@ def _format_show(shows):
                 "artist_id": show.artist_id,
                 "artist_name": show.artist.name,
                 "artist_image_link": show.artist.image_link,
-                "start_time": show.start_time
+                "start_time": str(show.start_time)
+            }
+        )
+    return formatted_shows
+
+def _format_show_for_artist(shows):
+    formatted_shows = []
+    for show in shows:
+        formatted_shows.append(
+            {
+                "venue_id": show.venue_id,
+                "venue_name": show.venue.name,
+                "venue_image_link": show.venue.image_link,
+                "start_time": str(show.start_time)
             }
         )
     return formatted_shows
