@@ -82,7 +82,8 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
 
-  venue = Venue.query.filter_by(id=venue_id).first()
+  venue = Venue.query.get(venue_id)
+  shows = db.session.query(Show).join(Artist).filter(Show.venue_id==venue_id).all()
   data = {
     "id": venue.id,
     "name": venue.name,
@@ -96,10 +97,10 @@ def show_venue(venue_id):
     "seeking_talent": venue.seeking_talent,
     "seeking_description": venue.seeking_description,
     "image_link": venue.image_link,
-    "past_shows": helper.get_formatted_past_shows(venue.shows),
-    "upcoming_shows": helper.get_formatted_upcoming_shows(venue.shows),
-    "past_shows_count": helper.get_past_shows_counter(venue.shows),
-    "upcoming_shows_count": helper.get_upcoming_shows_counter(venue.shows)
+    "past_shows": helper.get_formatted_past_shows(shows),
+    "upcoming_shows": helper.get_formatted_upcoming_shows(shows),
+    "past_shows_count": helper.get_past_shows_counter(shows),
+    "upcoming_shows_count": helper.get_upcoming_shows_counter(shows)
   }
   return render_template('pages/show_venue.html', venue=data)
 
@@ -182,6 +183,7 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist = Artist.query.filter_by(id=artist_id).first()
+  shows = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id)
   data = {
     "id": artist.id,
     "name": artist.name,
@@ -194,10 +196,10 @@ def show_artist(artist_id):
     "seeking_venue": artist.seeking_venue,
     "seeking_description": artist.seeking_description,
     "image_link": artist.image_link,
-    "past_shows": helper.get_formatted_past_shows_for_artist(artist.shows),
-    "upcoming_shows": helper.get_formatted_upcoming_shows_for_artist(artist.shows),
-    "past_shows_count": helper.get_past_shows_counter(artist.shows),
-    "upcoming_shows_count": helper.get_upcoming_shows_counter(artist.shows)
+    "past_shows": helper.get_formatted_past_shows_for_artist(shows),
+    "upcoming_shows": helper.get_formatted_upcoming_shows_for_artist(shows),
+    "past_shows_count": helper.get_past_shows_counter(shows),
+    "upcoming_shows_count": helper.get_upcoming_shows_counter(shows)
   }
   return render_template('pages/show_artist.html', artist=data)
 
