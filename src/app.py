@@ -7,70 +7,13 @@ import dateutil.parser
 import babel
 import sys
 import magicattr
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
-from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask import ( render_template, request, Response, flash, redirect, url_for )
 import logging
 from logging import Formatter, FileHandler
+from model import db, app, Artist, Venue, Show
 from flask_wtf import Form
 from forms import *
 from helpers import helper
-
-#----------------------------------------------------------------------------#
-# App Config.
-#----------------------------------------------------------------------------#
-
-app = Flask(__name__)
-moment = Moment(app)
-app.config.from_object('config')
-db = SQLAlchemy(app)
-
-# TODO: connect to a local postgresql database
-migrate = Migrate(app, db)
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-class Show(db.Model):
-    __tablename__ = 'shows'
-
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id', ondelete="CASCADE"), primary_key=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id', ondelete="CASCADE"), primary_key=True)
-    start_time = db.Column(db.DateTime, primary_key=True)
-    artist = db.relationship('Artist', backref=db.backref('shows', lazy =True))
-    venue = db.relationship('Venue', backref=db.backref('shows', lazy =True))
-
-class Venue(db.Model):
-    __tablename__ = 'Venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    genres = db.Column(db.String(120))
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website = db.Column(db.String(500))
-    seeking_talent = db.Column(db.Boolean)
-    seeking_description = db.Column(db.String())
-
-class Artist(db.Model):
-    __tablename__ = 'Artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website = db.Column(db.String(500))
-    seeking_venue = db.Column(db.Boolean)
-    seeking_description = db.Column(db.String())
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -119,7 +62,7 @@ def venues():
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
   search_term = request.form.get('search_term', '')
-  venues = Venue.query.filter(Venue.name.like('%'+search_term+'%')).all()
+  venues = Venue.query.filter(Venue.name.ilike('%'+search_term+'%')).all()
   response = {
     "count": len(venues),
     "data": []
@@ -181,7 +124,7 @@ def create_venue_submission():
     facebook_link = request.form.get('facebook_link', ''),
     website = request.form.get('website',''),
     image_link = request.form.get('image_link', ''),
-    seeking_talent = request.form.get('seeking_talent', False),
+    seeking_talent = bool(request.form.get('seeking_talent', False)),
     seeking_description = request.form.get('seeking_description', '')
     )
     db.session.add(new_venue)
@@ -284,6 +227,9 @@ def edit_artist_submission(artist_id):
     artist.phone = request.form.get("phone", "")
     artist.image_link = request.form.get("image_link", "")
     artist.facebook_link = request.form.get("facebook_link", "")
+    artist.seeking_venue = bool(request.form.get('seeking_venue', False))
+    artist.seeking_description = request.form.get('seeking_description', '')
+    artist.website = request.form.get('website', '')
     db.session.commit()
   except:
     db.session.rollback()
@@ -315,6 +261,10 @@ def edit_venue_submission(venue_id):
     venue.phone = request.form.get("phone", "")
     venue.image_link = request.form.get("image_link", "")
     venue.facebook_link = request.form.get("facebook_link", "")
+    venue.seeking_talent = bool(request.form.get('seeking_talent', False))
+    venue.seeking_description = request.form.get('seeking_description', '')
+    venue.website = request.form.get('website', '')
+    
     db.session.commit()
   except:
     db.session.rollback()
@@ -342,7 +292,7 @@ def create_artist_submission():
     facebook_link = request.form.get('facebook_link', ''),
     website = request.form.get('website',''),
     image_link = request.form.get('image_link', ''),
-    seeking_venue = request.form.get('seeking_venue', False),
+    seeking_venue = bool(request.form.get('seeking_venue', False)),
     seeking_description = request.form.get('seeking_description', '')
     )
     db.session.add(new_artist)
