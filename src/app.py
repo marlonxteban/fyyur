@@ -183,7 +183,7 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
   artist = Artist.query.filter_by(id=artist_id).first()
-  shows = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id)
+  shows = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id).all()
   data = {
     "id": artist.id,
     "name": artist.name,
